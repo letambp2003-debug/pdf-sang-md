@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b5cab" />
+  <title>PDF2Markdown Pro V2.1</title>
+  <style>
+    :root{
+      --bg:#f4f7fb;--card:#fff;--ink:#16324f;--muted:#64748b;--line:#dbe5ef;
+      --primary:#0b5cab;--primary2:#174f87;--soft:#eef6ff;--ok:#137a4b;--warn:#9a6700;--bad:#b42318;
+      --radius:18px;--shadow:0 18px 45px rgba(22,50,79,.10)
+    }
+    *{box-sizing:border-box} html{scroll-behavior:smooth}
+    body{margin:0;font-family:Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#edf4fb 0,#f7f9fc 32%,#f4f7fb 100%);color:var(--ink)}
+    button,input,select{font:inherit}.shell{max-width:1180px;margin:0 auto;padding:28px 18px 54px}
+    .hero{display:flex;justify-content:space-between;gap:22px;align-items:flex-start;margin-bottom:18px}
+    h1{font-size:34px;line-height:1.1;margin:0 0 10px}.tag{display:inline-flex;align-items:center;gap:7px;border:1px solid #bdd5ec;background:#f7fbff;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:800;color:#0b5cab;vertical-align:middle;margin-left:8px}
+    .lead{max-width:820px;color:#53677c;line-height:1.6;margin:0}.privacy{font-size:12px;color:#617286;background:#fff;border:1px solid var(--line);padding:10px 12px;border-radius:12px;max-width:290px}
+    .card{background:var(--card);border:1px solid rgba(219,229,239,.95);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .card-body{padding:24px}.health{display:flex;flex-wrap:wrap;gap:9px;margin:0 0 18px}.chip{border:1px solid var(--line);background:#fbfdff;border-radius:999px;padding:7px 10px;font-size:12px}.chip.ok{border-color:#bde4cf;background:#f0fbf5;color:#0f6840}.chip.warn{border-color:#eed9a6;background:#fffaf0;color:#845b00}.chip.bad{border-color:#f3c4bf;background:#fff5f4;color:#9f2119}
+    .drop{border:2px dashed #8fb2d5;border-radius:16px;background:#f9fcff;padding:34px;text-align:center;cursor:pointer;transition:.16s}.drop:hover,.drop.drag{border-color:var(--primary);background:#edf6ff;transform:translateY(-1px)}.drop strong{font-size:18px}.drop .meta{font-size:13px;color:var(--muted);margin-top:7px}.filename{margin-top:10px;font-weight:800;color:#0b5cab;word-break:break-word}
+    .section{border-top:1px solid #edf2f7;padding:22px 24px}.section:first-of-type{border-top:0}.section-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:14px}.section h2{font-size:17px;margin:0}.note{font-size:12px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .field{display:flex;flex-direction:column;gap:6px}.field label{font-size:13px;font-weight:750}.field small{font-size:11px;color:var(--muted);font-weight:400}
+    select,input[type=text],input[type=number]{width:100%;border:1px solid #cbd8e5;background:#fff;padding:11px 12px;border-radius:11px;color:var(--ink);outline:none}select:focus,input:focus{border-color:#6da3d4;box-shadow:0 0 0 3px rgba(11,92,171,.10)}
+    .checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}.check{display:flex;gap:9px;align-items:flex-start;border:1px solid #e1e9f1;padding:11px 12px;border-radius:12px;background:#fbfdff;font-size:13px}.check input{margin-top:2px}.check b{display:block;margin-bottom:2px}.check span{display:block;color:var(--muted);font-size:11px;line-height:1.35}
+    details.advanced{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:#fbfdff}details summary{cursor:pointer;padding:12px 14px;font-weight:750;font-size:13px}.advanced-body{padding:0 14px 14px}
+    .actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:22px 24px;border-top:1px solid #edf2f7;background:#fbfcfe}.btn{border:0;border-radius:11px;padding:12px 18px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}.btn.primary{background:var(--primary);color:#fff}.btn.primary:hover{background:#084e92}.btn.secondary{background:#eaf1f8;color:#17324f}.btn:disabled{opacity:.55;cursor:not-allowed}.actions .safety{margin-left:auto;font-size:12px;color:var(--muted);max-width:470px}
+    .status{display:none;margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 32px rgba(22,50,79,.07);padding:20px}.status-top{display:flex;justify-content:space-between;gap:14px}.status-title{font-weight:850}.percent{font-variant-numeric:tabular-nums;font-weight:800}.bar{height:11px;border-radius:999px;background:#e5edf5;overflow:hidden;margin:12px 0}.bar>div{height:100%;width:0;background:linear-gradient(90deg,#0b5cab,#3a86c8);transition:width .35s}.detail{font-size:12px;color:var(--muted)}.error{color:var(--bad)}.success{color:var(--ok)}
+    .result-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}.metric{padding:12px;border:1px solid var(--line);border-radius:12px;background:#fbfdff}.metric .k{font-size:11px;color:var(--muted)}.metric .v{font-size:17px;font-weight:850;margin-top:3px}
+    footer{text-align:center;color:#738397;font-size:12px;margin-top:18px}
+    @media(max-width:860px){.hero{display:block}.privacy{max-width:none;margin-top:12px}.grid,.grid.two{grid-template-columns:1fr 1fr}.result-grid{grid-template-columns:1fr 1fr}.actions .safety{width:100%;margin-left:0}}
+    @media(max-width:600px){.shell{padding:12px 10px 32px}h1{font-size:28px}.card-body,.section,.actions{padding:17px}.grid,.grid.two,.checks,.result-grid{grid-template-columns:1fr}.drop{padding:25px 14px}}
+  </style>
+</head>
+<body>
+<main class="shell">
+  <div class="hero">
+    <div>
+      <h1>PDF2Markdown Pro <span class="tag">V2.1 · Windows / Antigravity</span></h1>
+      <p class="lead">Chuyển PDF thành Markdown có truy vết nguồn: OCR có điều kiện → MinerU/PyMuPDF → ảnh & assets → Formula/Table QA → Gemini QA tùy chọn → Safe Auto-Fix có diff/rollback → Data Pack → ZIP.</p>
+    </div>
+    <div class="privacy"><b>Bảo mật:</b> Gemini API key chỉ nằm ở backend/.env. Giao diện này không yêu cầu và không lưu API key.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div id="health" class="health"><span class="chip">Đang kiểm tra môi trường...</span></div>
+      <div id="drop" class="drop" role="button" tabindex="0" aria-label="Chọn tệp PDF">
+        <strong>Kéo thả PDF vào đây</strong> hoặc bấm để chọn
+        <div class="meta">PDF gốc luôn được giữ trong gói kết quả. Không ghi đè tệp nguồn.</div>
+        <div id="filename" class="filename"></div>
+        <input id="file" type="file" accept="application/pdf,.pdf" hidden />
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="section-head"><h2>1. Trích xuất & OCR</h2><span class="note">Mặc định an toàn: Auto + Standard + OCR Auto</span></div>
+      <div class="grid">
+        <div class="field"><label>Engine</label><select id="engine"><option value="auto" selected>Auto: MinerU → PyMuPDF</option><option value="mineru">MinerU 4.x</option><option value="pymupdf">PyMuPDF4LLM</option></select></div>
+        <div class="field"><label>MinerU tier</label><select id="tier"><option value="flash">Flash</option><option value="basic">Basic</option><option value="standard" selected>Standard · khuyến nghị</option><option value="advanced">Advanced · tài liệu khó</option></select></div>
+        <div class="field"><label>OCR preprocessing</label><select id="ocr"><option value="off">Off</option><option value="auto" selected>Auto · chỉ trang cần OCR</option><option value="force">Force · OCR toàn bộ khi thật cần</option></select></div>
+        <div class="field"><label>OCR languages <small>Tesseract</small></label><input id="ocrLang" type="text" value="vie+eng" /></div>
+        <div class="field"><label>DPI ảnh đối chứng</label><input id="dpi" type="number" min="120" max="350" step="10" value="240" /></div>
+        <div class="field"><label>Gemini QA scope</label><select id="geminiScope"><option value="flagged" selected>Flagged · tiết kiệm token</option><option value="all">All · kiểm tra mọi trang</option></select></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2>2. QA & sửa an toàn</h2><span class="note">AI chỉ reviewer; không dùng để viết lại toàn bộ tài liệu</span></div>
+      <div class="checks">
+        <label class="check"><input id="gemini" type="checkbox" /><span><b>Gemini visual QA</b>Đối chiếu ảnh trang gốc với Markdown ứng viên. Cần GEMINI_API_KEY ở backend.</span></label>
+        <label class="check"><input id="autofix" type="checkbox" /><span><b>Safe Auto-Fix</b>Chỉ patch duy nhất, đủ confidence; có before/after/diff và rollback.</span></label>
+        <label class="check"><input id="renders" type="checkbox" checked /><span><b>Giữ Page Render</b>Lưu ảnh từng trang để kiểm chứng và QA về sau.</span></label>
+        <label class="check"><input id="datapack" type="checkbox" checked /><span><b>Tạo Data Pack</b>Tạo dữ liệu dùng tiếp cho Gem, NotebookLM, RAG hoặc chatbot.</span></label>
+      </div>
+      <div class="grid two" style="margin-top:14px">
+        <div class="field"><label>Ngưỡng Safe Auto-Fix</label><input id="confidence" type="number" min="0.90" max="1" step="0.001" value="0.985" /></div>
+        <div class="field"><label>Nguyên tắc</label><input type="text" value="Không đủ bằng chứng → REVIEW, không tự đoán" disabled /></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2>3. Metadata Data Pack</h2><span class="note">Có thể để trống; hệ thống không tự bịa metadata</span></div>
+      <div class="grid">
+        <div class="field"><label>Môn</label><input id="subject" type="text" placeholder="Ví dụ: Toán" /></div>
+        <div class="field"><label>Lớp</label><input id="grade" type="text" placeholder="Ví dụ: 8" /></div>
+        <div class="field"><label>Bộ sách</label><input id="bookSet" type="text" placeholder="Ví dụ: Kết nối tri thức" /></div>
+      </div>
+      <details class="advanced">
+        <summary>Cấu hình Antigravity / API server</summary>
+        <div class="advanced-body grid two">
+          <div class="field"><label>API Base URL <small>để trống = cùng domain</small></label><input id="apiBase" type="text" placeholder="Ví dụ: http://127.0.0.1:8765" /></div>
+          <div class="field"><label>Lưu cấu hình trình duyệt</label><button id="saveApi" class="btn secondary" type="button">Lưu API Base</button></div>
+        </div>
+      </details>
+    </section>
+
+    <div class="actions">
+      <button id="run" class="btn primary" type="button">Bắt đầu chuyển đổi</button>
+      <button id="reset" class="btn secondary" type="button">Đặt lại</button>
+      <div class="safety">Kết quả chỉ được coi là <b>PASS</b> khi QA không còn lỗi critical/high theo bộ kiểm tra đang áp dụng. Trang nghi ngờ phải được đánh dấu <b>REVIEW</b>.</div>
+    </div>
+  </div>
+
+  <div id="status" class="status" aria-live="polite">
+    <div class="status-top"><div id="statusText" class="status-title">Đang xử lý...</div><div id="percent" class="percent">0%</div></div>
+    <div class="bar"><div id="progress"></div></div>
+    <div id="detail" class="detail"></div>
+    <div id="result" class="result-grid" style="display:none"></div>
+    <div id="download" style="margin-top:14px"></div>
+  </div>
+  <footer>PDF2Markdown Pro V2.1 · nguồn gốc được bảo toàn · QA có truy vết · không đưa API key vào client</footer>
+</main>
+<script>
+(() => {
+  let selected = null;
+  let pollTimer = null;
+  const $ = id => document.getElementById(id);
+  const drop = $('drop'), file = $('file');
+
+  const apiBase = () => ($('apiBase').value || '').trim().replace(/\/$/, '');
+  const api = path => `${apiBase()}${path}`;
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  function loadSavedApi(){ const v=localStorage.getItem('pdf2md_api_base') || ''; $('apiBase').value=v; }
+  $('saveApi').onclick=()=>{ localStorage.setItem('pdf2md_api_base', apiBase()); loadHealth(); };
+
+  function setFile(f){
+    if(!f) return;
+    if(!f.name.toLowerCase().endsWith('.pdf')){ alert('Chỉ chấp nhận tệp PDF.'); return; }
+    selected=f; $('filename').textContent=`${f.name} · ${(f.size/1024/1024).toFixed(2)} MB`;
+  }
+  drop.onclick=()=>file.click();
+  drop.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();file.click();} };
+  file.onchange=()=>setFile(file.files[0]);
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));
+  drop.addEventListener('drop',e=>setFile(e.dataTransfer.files[0]));
+
+  async function loadHealth(){
+    $('health').innerHTML='<span class="chip">Đang kiểm tra môi trường...</span>';
+    try{
+      const r=await fetch(api('/api/health'));
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      const j=await r.json();
+      const chip=(name,ok,good,bad)=>`<span class="chip ${ok?'ok':'warn'}">${name}: <b>${ok?good:bad}</b></span>`;
+      $('health').innerHTML=[
+        `<span class="chip ok">API: <b>V${esc(j.version||'2.x')}</b></span>`,
+        chip('MinerU',j.mineru_available,'OK','chưa cài'),
+        chip('OCRmyPDF',j.ocrmypdf_available,'OK','chưa cài'),
+        chip('Gemini',j.gemini_configured,'đã cấu hình','chưa có key')
+      ].join('');
+    }catch(err){ $('health').innerHTML='<span class="chip bad">Không kết nối được backend. Kiểm tra API Base hoặc chạy run_windows.ps1.</span>'; }
+  }
+
+  function payload(){
+    const fd=new FormData();
+    fd.append('file',selected);
+    const map={engine:'engine',mineru_tier:'tier',ocr_mode:'ocr',ocr_languages:'ocrLang',gemini_qa_scope:'geminiScope',safe_fix_min_confidence:'confidence',render_dpi:'dpi',subject:'subject',grade:'grade',book_set:'bookSet'};
+    Object.entries(map).forEach(([key,id])=>fd.append(key,$(id).value));
+    fd.append('gemini_qa',$('gemini').checked);
+    fd.append('auto_apply_safe_fixes',$('autofix').checked);
+    fd.append('preserve_page_renders',$('renders').checked);
+    fd.append('build_datapack',$('datapack').checked);
+    return fd;
+  }
+
+  function showStatus(){ $('status').style.display='block'; $('result').style.display='none'; $('result').innerHTML=''; $('download').innerHTML=''; $('statusText').className='status-title'; }
+  function updateProgress(j){ const p=Number(j.progress||0); $('progress').style.width=`${p}%`; $('percent').textContent=`${p}%`; $('statusText').textContent=j.message||j.status||'Đang xử lý'; $('detail').textContent=`Giai đoạn: ${j.stage||'-'} · Trạng thái: ${j.status||'-'}`; }
+  function fail(msg){ $('statusText').className='status-title error'; $('statusText').textContent=msg; $('run').disabled=false; }
+
+  $('run').onclick=async()=>{
+    if(!selected){ alert('Hãy chọn một tệp PDF trước.'); return; }
+    if($('autofix').checked && !$('gemini').checked){ alert('Safe Auto-Fix cần Gemini QA để tạo patch có kiểm soát. Hãy bật Gemini QA hoặc tắt Auto-Fix.'); return; }
+    showStatus(); $('run').disabled=true; $('progress').style.width='0%'; $('percent').textContent='0%';
+    try{
+      const r=await fetch(api('/api/jobs'),{method:'POST',body:payload()});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok){ fail(j.detail||`Không tạo được job (HTTP ${r.status})`); return; }
+      poll(j.job_id);
+    }catch(err){ fail(`Không kết nối được backend: ${err.message}`); }
+  };
+
+  async function poll(id){
+    clearTimeout(pollTimer);
+    try{
+      const r=await fetch(api(`/api/jobs/${id}`));
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok){ fail(j.detail||`Không đọc được job (HTTP ${r.status})`); return; }
+      updateProgress(j);
+      if(j.status==='completed'){
+        $('statusText').className='status-title success'; $('run').disabled=false;
+        $('result').style.display='grid';
+        $('result').innerHTML=`
+          <div class="metric"><div class="k">QA status</div><div class="v">${esc(j.qa_status||'UNKNOWN')}</div></div>
+          <div class="metric"><div class="k">Data Pack</div><div class="v">${esc(j.datapack_segments||0)} segment</div></div>
+          <div class="metric"><div class="k">Job ID</div><div class="v" style="font-size:13px">${esc(id)}</div></div>`;
+        $('download').innerHTML=`<a class="btn secondary" href="${api(`/api/jobs/${id}/download`)}">Tải ZIP kết quả</a>`;
+        return;
+      }
+      if(j.status==='failed'){ fail(j.error||'Xử lý thất bại.'); return; }
+      pollTimer=setTimeout(()=>poll(id),1500);
+    }catch(err){ fail(`Mất kết nối khi theo dõi job: ${err.message}`); }
+  }
+
+  $('reset').onclick=()=>{
+    clearTimeout(pollTimer); selected=null; file.value=''; $('filename').textContent=''; $('status').style.display='none'; $('run').disabled=false;
+    $('engine').value='auto'; $('tier').value='standard'; $('ocr').value='auto'; $('ocrLang').value='vie+eng'; $('dpi').value='240'; $('geminiScope').value='flagged'; $('confidence').value='0.985';
+    $('gemini').checked=false; $('autofix').checked=false; $('renders').checked=true; $('datapack').checked=true; $('subject').value=''; $('grade').value=''; $('bookSet').value='';
+  };
+
+  loadSavedApi(); loadHealth();
+})();
+</script>
+</body>
+</html>
