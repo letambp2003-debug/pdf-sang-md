@@ -1,0 +1,9 @@
+app/
+tests/
+scripts/
+docs/
+requirements.txt
+requirements-mineru.txt
+install_mineru_windows.ps1
+install_ocr_windows.ps1
+run_windows.ps1
