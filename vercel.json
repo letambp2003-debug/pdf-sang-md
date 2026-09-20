@@ -1,9 +1,21 @@
 {
+  "version": 2,
+  "framework": null,
+  "buildCommand": "node -e \"console.log('Build completed')\"",
+  "outputDirectory": ".",
   "cleanUrls": true,
-  "rewrites": [
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/api/health",
+      "dest": "/api_health_mock.json"
+    },
+    {
+      "src": "/static/(.*)",
+      "dest": "/app/static/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }

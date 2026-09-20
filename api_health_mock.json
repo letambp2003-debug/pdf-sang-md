@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "version": "2.1.0",
+  "mode": "cloud_preview",
+  "gemini_configured": false,
+  "mineru_available": false,
+  "ocrmypdf_available": false
+}

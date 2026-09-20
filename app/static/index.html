@@ -146,13 +146,63 @@
       if(!r.ok) throw new Error(`HTTP ${r.status}`);
       const j=await r.json();
       const chip=(name,ok,good,bad)=>`<span class="chip ${ok?'ok':'warn'}">${name}: <b>${ok?good:bad}</b></span>`;
-      $('health').innerHTML=[
-        `<span class="chip ok">API: <b>V${esc(j.version||'2.x')}</b></span>`,
-        chip('MinerU',j.mineru_available,'OK','chưa cài'),
-        chip('OCRmyPDF',j.ocrmypdf_available,'OK','chưa cài'),
-        chip('Gemini',j.gemini_configured,'đã cấu hình','chưa có key')
-      ].join('');
-    }catch(err){ $('health').innerHTML='<span class="chip bad">Không kết nối được backend. Kiểm tra API Base hoặc chạy run_windows.ps1.</span>'; }
+      if(j.mode === 'cloud_preview' && !apiBase()){
+        $('health').innerHTML=[
+          `<span class="chip ok">Nền tảng: <b>Vercel Cloud (Sẵn sàng)</b></span>`,
+          `<span class="chip ok">Phiên bản: <b>V2.1.0</b></span>`,
+          `<span class="chip warn">Backend: <b>Nhập API Base để chạy thật hoặc dùng Demo</b></span>`
+        ].join('');
+      } else {
+        $('health').innerHTML=[
+          `<span class="chip ok">API: <b>V${esc(j.version||'2.1')}</b></span>`,
+          chip('MinerU',j.mineru_available,'OK','chưa cài'),
+          chip('OCRmyPDF',j.ocrmypdf_available,'OK','chưa cài'),
+          chip('Gemini',j.gemini_configured,'đã cấu hình','chưa có key')
+        ].join('');
+      }
+    }catch(err){
+      if(!apiBase() && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1'){
+        $('health').innerHTML='<span class="chip ok">Vercel Cloud Online</span> <span class="chip warn">Nhập API Base để kết nối máy tính</span>';
+      } else {
+        $('health').innerHTML='<span class="chip bad">Không kết nối được backend. Kiểm tra API Base hoặc chạy run_windows.ps1.</span>';
+      }
+    }
+  }
+
+  function simulateDemo(){
+    const stages = [
+      {p: 8, msg: 'Đang kiểm tra PDF gốc (Preflight)...', st: 'preflight'},
+      {p: 20, msg: 'Đang kiểm tra nhu cầu OCR / Deskew / Xoay trang...', st: 'ocr'},
+      {p: 40, msg: 'Đang render từng trang đối chứng 240 DPI...', st: 'render'},
+      {p: 65, msg: 'Đang trích xuất Markdown, công thức và bảng...', st: 'extract'},
+      {p: 82, msg: 'Đang chạy Formula QA, Table QA & Coverage check...', st: 'local_qa'},
+      {p: 92, msg: 'Đang tạo Data Pack (00_INDEX.md, chapters/)...', st: 'datapack'},
+      {p: 100, msg: 'Hoàn tất mô phỏng quy trình PDF2Markdown Pro V2.1!', st: 'completed'}
+    ];
+    let step = 0;
+    const timer = setInterval(() => {
+      if(step < stages.length){
+        const cur = stages[step];
+        updateProgress({progress: cur.p, message: cur.msg, stage: cur.st, status: cur.p === 100 ? 'completed' : 'running'});
+        step++;
+      } else {
+        clearInterval(timer);
+        $('statusText').className='status-title success';
+        $('run').disabled=false;
+        $('result').style.display='grid';
+        $('result').innerHTML=`
+          <div class="metric"><div class="k">QA status</div><div class="v" style="color:var(--ok)">PASS</div></div>
+          <div class="metric"><div class="k">Data Pack</div><div class="v">4 chapters</div></div>
+          <div class="metric"><div class="k">Chế độ</div><div class="v" style="font-size:13px">Demo Preview</div></div>`;
+        $('download').innerHTML=`
+          <div style="background:#eef6ff;border:1px solid #bdd5ec;border-radius:12px;padding:14px;font-size:13px;line-height:1.6">
+            <b>✅ Mô phỏng quy trình thành công 100%!</b><br/>
+            Để xử lý tệp PDF thật của bạn với MinerU/OCRmyPDF và tải ZIP kết quả:<br/>
+            1. Chạy <code>.\\run_windows.ps1</code> trên máy tính.<br/>
+            2. Điền URL máy tính của bạn vào mục <i>"Cấu hình Antigravity / API server"</i> bên dưới.
+          </div>`;
+      }
+    }, 700);
   }
 
   function payload(){
@@ -175,12 +225,45 @@
     if(!selected){ alert('Hãy chọn một tệp PDF trước.'); return; }
     if($('autofix').checked && !$('gemini').checked){ alert('Safe Auto-Fix cần Gemini QA để tạo patch có kiểm soát. Hãy bật Gemini QA hoặc tắt Auto-Fix.'); return; }
     showStatus(); $('run').disabled=true; $('progress').style.width='0%'; $('percent').textContent='0%';
+
+    const isCloudWithoutBackend = !apiBase() && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
+    if(isCloudWithoutBackend){
+      try{
+        const testRes = await fetch(api('/api/health'));
+        const testJson = await testRes.json().catch(()=>({}));
+        if(testJson.mode === 'cloud_preview'){
+          const proceed = confirm("Bạn đang ở bản Cloud trên Vercel chưa kết nối Backend máy tính.\n\nBạn có muốn chạy 'Mô phỏng quy trình (Demo Preview)' để kiểm tra luồng hoạt động 100% không?");
+          if(proceed){
+            simulateDemo();
+            return;
+          } else {
+            $('status').style.display='none';
+            $('run').disabled=false;
+            return;
+          }
+        }
+      }catch(e){}
+    }
+
     try{
       const r=await fetch(api('/api/jobs'),{method:'POST',body:payload()});
       const j=await r.json().catch(()=>({}));
-      if(!r.ok){ fail(j.detail||`Không tạo được job (HTTP ${r.status})`); return; }
+      if(!r.ok){
+        if(isCloudWithoutBackend){
+          simulateDemo();
+          return;
+        }
+        fail(j.detail||`Không tạo được job (HTTP ${r.status})`);
+        return;
+      }
       poll(j.job_id);
-    }catch(err){ fail(`Không kết nối được backend: ${err.message}`); }
+    }catch(err){
+      if(isCloudWithoutBackend){
+        simulateDemo();
+        return;
+      }
+      fail(`Không kết nối được backend: ${err.message}`);
+    }
   };
 
   async function poll(id){

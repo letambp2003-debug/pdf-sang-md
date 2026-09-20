@@ -18,4 +18,9 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-settings.data_dir.mkdir(parents=True, exist_ok=True)
+try:
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
+except OSError:
+    import tempfile
+    settings.data_dir = Path(tempfile.gettempdir()) / "data"
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
