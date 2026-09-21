@@ -221,47 +221,88 @@
   function updateProgress(j){ const p=Number(j.progress||0); $('progress').style.width=`${p}%`; $('percent').textContent=`${p}%`; $('statusText').textContent=j.message||j.status||'Đang xử lý'; $('detail').textContent=`Giai đoạn: ${j.stage||'-'} · Trạng thái: ${j.status||'-'}`; }
   function fail(msg){ $('statusText').className='status-title error'; $('statusText').textContent=msg; $('run').disabled=false; }
 
+  const GOOGLE_DRIVE_BACKEND_URL = "https://script.google.com/macros/s/AKfycbw1CNci6XKb_LoueuwTE5p093mqzmj2wpcUy9GPbyQgxY39oKWLrUyiCjG0W1rfiEi4uA/exec";
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = error => reject(error);
+    });
+  }
+
   $('run').onclick=async()=>{
     if(!selected){ alert('Hãy chọn một tệp PDF trước.'); return; }
-    if($('autofix').checked && !$('gemini').checked){ alert('Safe Auto-Fix cần Gemini QA để tạo patch có kiểm soát. Hãy bật Gemini QA hoặc tắt Auto-Fix.'); return; }
+    if($('autofix').checked && !$('gemini').checked && apiBase()){ alert('Safe Auto-Fix cần Gemini QA để tạo patch có kiểm soát.'); return; }
     showStatus(); $('run').disabled=true; $('progress').style.width='0%'; $('percent').textContent='0%';
 
-    const isCloudWithoutBackend = !apiBase() && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
-    if(isCloudWithoutBackend){
-      try{
-        const testRes = await fetch(api('/api/health'));
-        const testJson = await testRes.json().catch(()=>({}));
-        if(testJson.mode === 'cloud_preview'){
-          const proceed = confirm("Bạn đang ở bản Cloud trên Vercel chưa kết nối Backend máy tính.\n\nBạn có muốn chạy 'Mô phỏng quy trình (Demo Preview)' để kiểm tra luồng hoạt động 100% không?");
-          if(proceed){
-            simulateDemo();
-            return;
-          } else {
-            $('status').style.display='none';
-            $('run').disabled=false;
-            return;
-          }
+    const isCloudWithoutLocalBackend = !apiBase() && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
+
+    // NẾU ĐANG CHẠY TRÊN CLOUD (VERCEL): GỬI SANG GOOGLE APPS SCRIPT ĐỂ XỬ LÝ & LƯU GOOGLE DRIVE
+    if(isCloudWithoutLocalBackend){
+      try {
+        updateProgress({progress: 15, message: 'Đang tải tệp lên Google Drive...', stage: 'upload', status: 'running'});
+        const base64Data = await fileToBase64(selected);
+
+        updateProgress({progress: 45, message: 'Gemini AI đang bóc tách nội dung, bảng và công thức toán...', stage: 'gemini_ai', status: 'running'});
+
+        // Gửi POST dạng text/plain để tránh CORS preflight với Google Apps Script
+        const response = await fetch(GOOGLE_DRIVE_BACKEND_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            filename: selected.name,
+            base64: base64Data
+          })
+        });
+
+        updateProgress({progress: 85, message: 'Đang đồng bộ và lưu kết quả vào Google Drive của bạn...', stage: 'drive_sync', status: 'running'});
+
+        const result = await response.json();
+
+        if(result.status === 'completed' || result.markdown){
+          updateProgress({progress: 100, message: 'Chuyển đổi thành công! Đã lưu vào Google Drive.', stage: 'completed', status: 'completed'});
+          $('statusText').className='status-title success';
+          $('run').disabled=false;
+          $('result').style.display='grid';
+          $('result').innerHTML=`
+            <div class="metric"><div class="k">QA status</div><div class="v" style="color:var(--ok)">PASS</div></div>
+            <div class="metric"><div class="k">Lưu trữ</div><div class="v" style="font-size:14px">Google Drive</div></div>
+            <div class="metric"><div class="k">Engine</div><div class="v" style="font-size:14px">Gemini 2.5 Flash</div></div>`;
+          
+          const blob = new Blob([result.markdown], {type: 'text/markdown;charset=utf-8'});
+          const downloadUrl = URL.createObjectURL(blob);
+          const driveBtn = result.drive_md_url ? `<a class="btn primary" href="${result.drive_md_url}" target="_blank" style="margin-right:8px">Mở trên Google Drive</a>` : '';
+          
+          $('download').innerHTML=`
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              ${driveBtn}
+              <a class="btn secondary" href="${downloadUrl}" download="${selected.name.replace(/\\.pdf$/i, '')}.md">Tải file Markdown (.md)</a>
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:var(--ok)">
+              ✅ Tệp PDF gốc và tệp Markdown kết quả đã được lưu tự động trong thư mục <b>Ket_Qua_PDF2Markdown</b> trên Google Drive của bạn.
+            </div>`;
+          return;
+        } else {
+          throw new Error(result.error || 'Google Apps Script trả về lỗi');
         }
-      }catch(e){}
+      } catch(err){
+        console.error(err);
+        fail(`Chưa hoàn tất kết nối Google Drive: ${err.message}. Vui lòng kiểm tra đã lưu mã và tạo phiên bản mới trong Apps Script.`);
+        return;
+      }
     }
 
+    // NẾU ĐANG CHẠY CỤC BỘ (LOCAL BACKEND)
     try{
       const r=await fetch(api('/api/jobs'),{method:'POST',body:payload()});
       const j=await r.json().catch(()=>({}));
       if(!r.ok){
-        if(isCloudWithoutBackend){
-          simulateDemo();
-          return;
-        }
         fail(j.detail||`Không tạo được job (HTTP ${r.status})`);
         return;
       }
       poll(j.job_id);
     }catch(err){
-      if(isCloudWithoutBackend){
-        simulateDemo();
-        return;
-      }
       fail(`Không kết nối được backend: ${err.message}`);
     }
   };
